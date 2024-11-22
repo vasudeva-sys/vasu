@@ -1,0 +1,78 @@
+Parameters: 
+  MyKeyName:
+    Description: select the key MyKeyName
+    Type: AWS::EC2::KeyPair::KeyName
+  EnvironmentType: 
+    Description: The environment type
+    Type: String
+    Default: test
+    AllowedValues: 
+      - dev
+      - test
+    Description: must be a prod or test
+Conditions:
+  CreateEIPforProd: !Equals [!Ref EnvironmentType, prod]
+  CreateaSecgrp: !Equals [!Ref EnvironmentType, dev]
+Mappings: 
+  RegionAMIID: 
+    ap-south-1: 
+      dev: ami-0d13e3e640877b0b9
+      prod: ami-061183ad486d5dd8a
+    us-west-2: 
+      dev: ami-069d73f3235b535bd
+      prod: ami-08778753ef37aa408 
+  MyEnvironmentMap:
+    dev:
+      InstanceType: t2.micro
+    prod:
+      InstanceType: t2.small
+Resources:
+  MyInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !FindInMap 
+      - RegionAMIID
+      - !Ref AWS::Region
+      - prod
+      InstanceType: !FindInMap 
+      - MyEnvironmentMap
+      - !Ref EnvironmentType
+      - InstanceType
+      KeyName: !Ref MyKeyName
+      SecurityGroups: !If [CreateaSecgrp, [!Ref DevSecGrp], !Ref AWS::NoValue]
+  EIPforProd:
+    Type: AWS::EC2::EIP
+    Condition: CreateEIPforProd
+    Properties:
+      InstanceId: !Ref MyInstance
+  MySecGrp:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: SecGrpAllowSSH
+      GroupDescription: "allow SSH"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+  DevSecGrp:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateaSecgrp
+    Properties:
+      GroupName: AllowSSH
+      GroupDescription: "allow SSH"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+Outputs:
+  MyDNSName:
+    Description: My DNS name
+    Value: !GetAtt MyInstance.PublicDnsName
+  outputUbuntuInstance:
+    Description: A reference to the created EC2 Instance
+    Value: !Ref MyInstance
+  AvailabilityZone:
+    Description: "Availability zone"
+    Value: !GetAtt MyInstance.AvailabilityZone

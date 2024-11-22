@@ -1,0 +1,37 @@
+Resources:
+  MyLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: ami-0d13e3e640877b0b9
+      InstanceType: t2.micro
+      SecurityGroups:
+        - sg-050c52130511636d5
+      KeyName: krishna
+      UserData:
+        Fn::Base64: !Sub
+          /bin/bash
+          sudo yum update -y
+          sudo yum install httpd* -y
+          sudo systemctl start httpd
+          sudo systemctl enable httpd
+          echo Hello Welcome to krishnavasudeva world $(hostname -f) > /var/www/html/index.html
+
+  MyAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      LaunchConfigurationName: !Ref MyLaunchConfiguration
+      MinSize: 2
+      MaxSize: 4
+      DesiredCapacity: 2
+      VPCZoneIdentifier:
+        - subnet-0c7e94e8b8ef20145
+        - subnet-083d16b9ffdf3039c
+      Tags:
+        - Key: Name
+          Value: MyAutoScalingGroup
+          PropagateAtLaunch: true
+
+Outputs:
+  MyAutoScalingGroupName:
+    Description: "My Auto Scaling Group Name"
+    Value: !Ref MyAutoScalingGroup

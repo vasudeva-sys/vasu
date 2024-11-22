@@ -1,0 +1,94 @@
+Resources:
+  MyEC2Instance1:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0d13e3e640877b0b9
+      KeyName: krishna
+      SecurityGroupIds:
+        - sg-050c52130511636d5
+      SubnetId: subnet-0c7e94e8b8ef20145
+      Tags:
+        - Key: Name
+          Value: Instance 1
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #!/bin/bash
+            sudo yum update -y
+            sudo yum install httpd* -y
+            sudo systemctl start httpd
+            sudo systemctl enable httpd
+            echo Hello Welcome to $(hostname -f) > /var/www/html/index.html    
+
+  MyEC2Instance2:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      ImageId: ami-0d13e3e640877b0b9
+      KeyName: krishna
+      SecurityGroupIds:
+        - sg-050c52130511636d5
+      SubnetId: subnet-083d16b9ffdf3039c
+      Tags:
+        - Key: Name
+          Value: Instance 2
+      UserData:
+        Fn::Base64: 
+          !Sub |
+            #!/bin/bash
+            sudo yum update -y
+            sudo yum install httpd* -y
+            sudo systemctl start httpd
+            sudo systemctl enable httpd
+            echo Hello Welcome to my World from $(hostname -f) > /var/www/html/index.html    
+
+  MyLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: MyLoadBalancer
+      Subnets:
+        - subnet-083d16b9ffdf3039c
+        - subnet-0469d5ae46da1b709
+      SecurityGroups:
+        - sg-055d23745082a3c46
+      Type: application
+      Scheme: internet-facing
+      Tags:
+        - Key: Name
+          Value: MyLoadBalancer
+
+  MyTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: MyTargetGroup
+      Port: 80
+      Protocol: HTTP
+      TargetType: instance
+      Targets:
+           - Id: !Ref MyEC2Instance1
+           - Id: !Ref MyEC2Instance2
+      VpcId: vpc-094a592f9d454f738
+      Tags:
+        - Key: Name
+          Value: MyTargetGroup
+  
+  MyListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref MyLoadBalancer
+      Protocol: HTTP
+      Port: 80
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref MyTargetGroup
+Outputs:
+  MyALBDnsName:
+    Description: "My Alb dns id"
+    Value: !Sub ${MyLoadBalancer.DNSName}
+  MyfirstInstanceIp:
+    Description: "My Instance Ip1"
+    Value: !Sub "http://${MyEC2Instance1.PublicIp}"
+  MysecondInstanceIp:
+    Description: "My Instance Ip2"
+    Value: !Sub "http://${MyEC2Instance2.PublicIp}"

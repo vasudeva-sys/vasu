@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Parameters:
+  InstanceType:
+    Description: Parameters to define Intance types
+    Type: String
+    Default: "t2.micro"
+    AllowedValues:
+      - "t2.micro"
+      - "t2.nano"
+      - "t2.small"
+      - "t1.micro"
+    ConstraintDescription: One Must Select the Instance Type
+  SecGroupDescription:
+    Description: SecGroup Info
+    Type: String
+    Default: "Required port Defined"
+
+  SecurityGroupPort:
+    Description: Choose The Security Group Port 
+    Type: Number
+    MinValue: 20
+    MaxValue: 2000
+    Default: 22
+  SecurityGroupCIDRIngress:
+    Description: Parameters for Security Group Ingress CIDR
+    Type: String
+    MinLength: 9
+    MaxLength: 18
+    AllowedPattern: (\d{1,3}).(\d{1,3}).(\d{1,3}).(\d{1,3})/(\d{1,2})
+    Default: 0.0.0.0/0
+    ConstraintDescription: Must be a valid IP CIDR range of the form x.x.x.x/x
+  myVPCID:
+    Description: Parameter for VPCID
+    Type: AWS::EC2::VPC::Id 
+  myPasswd:
+    Description: Database Password to connect
+    Type: String
+    NoEcho: true
+  KeyName:
+    Description: List the existing AWS key pairs
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: Must be the existing key name
+  AppSubnet:
+    Description: Subnet IDs that list of Subnet Ids
+    Type: List<AWS::EC2::Subnet::Id>
+  AppSubnetIPBlocks:
+    Description: "Comma separated list of three CIDR Blocks"
+    Type: CommaDelimitedList
+    Default: "172.31.48.0/20, 172.31.64.0/20, 172.31.16.0/20"
+Resources:
+  MyEc2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-06ca3ca175f37dd66
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName 
+      SubnetId: !Ref AppSubnet
+  SecGroupInst:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+    #  GroupName: ProdSapSecGroup
+      GroupName: !Ref myPasswd
+      GroupDescription: !Ref SecGroupDescription
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !Ref SecurityGroupPort
+          ToPort: !Ref SecurityGroupPort
+          CidrIp: !Ref SecurityGroupCIDRIngress
+      VpcId: !Ref myVPCID
+  AppSubnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPCID
+      CidrBlock: !Select [0, !Ref AppSubnetIPBlocks]
+  AppSubnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPCID
+      CidrBlock: !Select [1, !Ref AppSubnetIPBlocks]
+  AppSubnet3:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref myVPCID
+      CidrBlock: !Select [2, !Ref AppSubnetIPBlocks]
+
+
+          
+   
