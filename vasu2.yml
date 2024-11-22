@@ -1,1 +1,21 @@
-
+---
+- name: play book to create a directory and copy play1.yml into remote servers
+  hosts:
+   - 192.168.38.200
+   - 192.168.42.200
+  #apply tasks on the above hosts
+  become: true
+  remote_user: ansible
+  tasks:
+  #Frist task to create a directory in the remote server if it doesnt exists
+  - name: create a directory /home/ansible/MyRemote
+    file:
+     path: /home/ansible/myRemote
+     state: directory
+     mode: 0755
+  #second task to copy play1.yml from current directory to /home/ansible/MyRemote directory in the remote server
+  - name: copy a play1.yaml tp remote server
+    copy:
+     src: /home/ansible/vasu2.yml
+     dest: /home/ansible/Remote/play1.yml
+...
